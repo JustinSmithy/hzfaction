@@ -13,7 +13,7 @@ from typing import Optional
 from contextlib import asynccontextmanager
 
 # ── database path ────────────────────────────────────────────────────────────
-DB_PATH = os.path.join(os.path.dirname(__file__), "factions.db")
+DB_PATH = "/tmp/factions.db"
 
 # ── websocket connection manager ─────────────────────────────────────────────
 class ConnectionManager:
