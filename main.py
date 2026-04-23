@@ -243,6 +243,25 @@ async def latest():
     con.close()
     return JSONResponse({"timestamp": snap["captured_at"], "factions": factions})
 
+# ── debug: see last raw payload ───────────────────────────────────────────────
+@app.get("/api/debug/last")
+async def debug_last():
+    con = sqlite3.connect(DB_PATH)
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute("SELECT id, captured_at, raw_payload FROM snapshots ORDER BY id DESC LIMIT 1")
+    row = cur.fetchone()
+    con.close()
+    if not row:
+        return JSONResponse({"error": "no snapshots yet"})
+    factions, _ = parse_payload(row["raw_payload"])
+    return JSONResponse({
+        "snapshot_id": row["id"],
+        "captured_at": row["captured_at"],
+        "raw_payload": row["raw_payload"],
+        "parsed_factions": factions,
+    })
+
 # ── websocket ──────────────────────────────────────────────────────────────────
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
