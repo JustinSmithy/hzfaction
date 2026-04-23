@@ -195,7 +195,7 @@ async def ingest(request: Request):
 
 # ── history API ────────────────────────────────────────────────────────────────
 @app.get("/api/history")
-async def history(limit: int = 200):
+async def get_history(limit: int = 200):
     """
     Returns the last `limit` snapshots as a time-series list.
     Shape: [ { timestamp, factions: [{tag, online, color_hex}] }, ... ]
