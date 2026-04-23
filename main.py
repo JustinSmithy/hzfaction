@@ -102,29 +102,38 @@ def parse_payload(raw: str) -> tuple[list[dict], dict[str, str]]:
     # parse faction rows
     factions: list[dict] = []
     for ln in faction_lines:
-        # strip colour codes
-        plain = re.sub(r"\{[0-9A-Fa-f]{6}\}", "", ln)
-
-        # row pattern:  *  3. [TAG] Faction Name | Leader: Name | Members online: N
-        row_m = re.match(
-            r"\s*\*\s+(\d+)\.\s+(?:\[|\{)?([A-Z0-9_\-]+)(?:\]|\})?\s+([^|]+)\|"
-            r".*?Leader:\s*([^|]+)\|.*?Members online:\s*(\d+)",
-            plain, re.IGNORECASE
-        )
-        if not row_m:
+        # must start with "* N."
+        if not re.match(r"\s*\*\s+\d+\.", ln):
             continue
 
-        faction_id, tag, _name, leader_raw, online_str = row_m.groups()
-        leader = leader_raw.strip()
-        online = int(online_str.strip())
-        color  = color_map.get(faction_id, "FFFFFF")
+        # extract faction id
+        faction_id = re.search(r"\*\s+(\d+)\.", ln).group(1)
 
-        lid = leader_ids.get(leader.lower().replace("_", " "))
+        # strip colour codes for easy parsing
+        plain = re.sub(r"\{[0-9A-Fa-f]{6}\}", "", ln)
+
+        # extract tag (first word after "N. ")
+        tag_m = re.search(r"\*\s+\d+\.\s+(\S+)", plain)
+        if not tag_m:
+            continue
+        tag = tag_m.group(1).upper()
+
+        # extract leader
+        leader_m = re.search(r"Leader:\s*([^|]+)", plain)
+        leader_raw = leader_m.group(1).strip() if leader_m else ""
+        leader = None if leader_raw.lower() in ("secret", "closed", "") else leader_raw
+
+        # extract online count
+        online_m = re.search(r"Online:\s*(\d+)", plain)
+        online = int(online_m.group(1)) if online_m else 0
+
+        color = color_map.get(faction_id, "FFFFFF")
+        lid = leader_ids.get(leader.lower().replace("_", " ")) if leader else None
 
         factions.append({
-            "tag":       tag.upper(),
+            "tag":       tag,
             "online":    online,
-            "leader":    leader if leader.lower() != "secret" else None,
+            "leader":    leader,
             "leader_id": lid,
             "color_hex": color,
         })
